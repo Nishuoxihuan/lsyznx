@@ -1,12 +1,5 @@
-#!name=节点体检 Pro Max Debug
-#!desc=固定标题测试版，用于排查参数占位符未展开问题
-#!category=Panel
-#!arguments=ABUSE_KEY=&IPQS_KEY=&SCAM_USER=&SCAM_KEY=
-#!arguments-desc=AbuseIPDB Key&IPQS Key&Scamalytics API User&Scamalytics API Key
-
 [Panel]
 节点体检 Pro Max Debug = title="节点体检 Pro Max Debug",content="点击刷新开始检测",style=info,script-name=节点体检 Pro Max Debug,update-interval=300
 
 [Script]
-节点体检 Pro Max Debug = type=generic,timeout=40,script-path=https://raw.githubusercontent.com/Nishuoxihuan/lsyznx/refs/heads/main/AI_Node_Pro_Max_Local.js,argument="abuse=%ABUSE_KEY%&ipqs=%IPQS_KEY%&scam_user=%SCAM_USER%&scam_key=%SCAM_KEY%&wabuse=40&wipqs=35&wscam=25&panel=节点体检 Pro Max Debug"
-
+节点体检 Pro Max Debug = type=generic,timeout=40,script-path=https://raw.githubusercontent.com/Nishuoxihuan/lsyznx/refs/heads/main/AI_Node_Pro_Max_Local.js
