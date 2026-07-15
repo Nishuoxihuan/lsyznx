@@ -17,15 +17,6 @@ function parseArgument() {
   return out;
 }
 
-function parseConfig(raw) {
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch (e) {
-    return {};
-  }
-}
-
 function getText(url) {
   return new Promise(function(resolve) {
     get(url, { 'User-Agent': 'Mozilla/5.0', 'Accept': '*/*' }, function(error, response, data) {
@@ -49,7 +40,7 @@ function getJSON(url, headers) {
   });
 }
 
-function siteCheck(name, url, keyword) {
+function siteCheck(url, keyword) {
   return new Promise(function(resolve) {
     var start = Date.now();
     get(url, {
@@ -99,6 +90,11 @@ function numOr(defaultValue, val) {
   return isNaN(n) ? defaultValue : n;
 }
 
+function fmtSource(name, item) {
+  if (!item || !item.ok || typeof item.score !== 'number') return name + ' --';
+  return name + ' ' + item.score;
+}
+
 async function getGeo(mainIP) {
   var geo = null;
   if (mainIP) {
@@ -128,11 +124,20 @@ async function getIPQSScore(ip, key) {
   return { name: 'IPQS', ok: score !== null, score: score };
 }
 
-async function getScamScore(ip, key) {
-  if (!key || !ip) return { name: 'Scamalytics', ok: false, score: null };
-  var data = await getJSON('https://api.scamalytics.com/v1/query/' + encodeURIComponent(ip), {
-    'X-API-Key': key
-  });
+async function getScamScore(ip, user, key) {
+  if (!ip || (!key && !user)) return { name: 'Scamalytics', ok: false, score: null };
+
+  var authHeaders = null;
+  if (user && key) {
+    var token = $persistentStore && $persistentStore.write ? null : null;
+    var basic = typeof btoa === 'function' ? btoa(user + ':' + key) : null;
+    if (!basic && typeof Buffer !== 'undefined') basic = Buffer.from(user + ':' + key).toString('base64');
+    if (basic) authHeaders = { 'Authorization': 'Basic ' + basic };
+  } else if (key) {
+    authHeaders = { 'X-API-Key': key };
+  }
+
+  var data = await getJSON('https://api.scamalytics.com/v1/query/' + encodeURIComponent(ip), authHeaders || {});
   var score = null;
   if (data) {
     if (typeof data.score === 'number') score = data.score;
@@ -170,16 +175,15 @@ function aggregatePurity(scores, hosting, proxy, weights) {
 
 (async function() {
   var args = parseArgument();
-  var cfg = parseConfig(args.config || '');
-
-  var ABUSE_KEY = cfg.abuse || '';
-  var IPQS_KEY = cfg.ipqs || '';
-  var SCAM_KEY = cfg.scam || '';
-  var PANEL_NAME = cfg.panel || '节点体检 Pro Max';
+  var ABUSE_KEY = args.abuse || '';
+  var IPQS_KEY = args.ipqs || '';
+  var SCAM_USER = args.scam_user || '';
+  var SCAM_KEY = args.scam_key || '';
+  var PANEL_NAME = args.panel || '节点体检 Pro Max';
   var weights = {
-    AbuseIPDB: numOr(40, cfg.wabuse),
-    IPQS: numOr(35, cfg.wipqs),
-    Scamalytics: numOr(25, cfg.wscam)
+    AbuseIPDB: numOr(40, args.wabuse),
+    IPQS: numOr(35, args.wipqs),
+    Scamalytics: numOr(25, args.wscam)
   };
 
   var mainIP = await getText('https://api.ip.sb/ip');
@@ -195,12 +199,12 @@ function aggregatePurity(scores, hosting, proxy, weights) {
   var mobile = !!(geo && geo.mobile);
 
   var results = await Promise.all([
-    siteCheck('ChatGPT', 'https://chatgpt.com/', 'chatgpt'),
-    siteCheck('Claude', 'https://claude.ai/', 'claude'),
-    siteCheck('Gemini', 'https://gemini.google.com/', 'gemini'),
+    siteCheck('https://chatgpt.com/', 'chatgpt'),
+    siteCheck('https://claude.ai/', 'claude'),
+    siteCheck('https://gemini.google.com/', 'gemini'),
     getAbuseScore(mainIP, ABUSE_KEY),
     getIPQSScore(mainIP, IPQS_KEY),
-    getScamScore(mainIP, SCAM_KEY)
+    getScamScore(mainIP, SCAM_USER, SCAM_KEY)
   ]);
 
   var chatgpt = results[0];
@@ -212,15 +216,14 @@ function aggregatePurity(scores, hosting, proxy, weights) {
 
   var purityInfo = aggregatePurity([abuse, ipqs, scam], hosting, proxy, weights);
   var speedText = 'ChatGPT ' + chatgpt.ms + 'ms · Claude ' + claude.ms + 'ms · Gemini ' + gemini.ms + 'ms';
-  var sourceUsed = [abuse, ipqs, scam].filter(function(x) { return x.ok; }).map(function(x) { return x.name; }).join(' / ') || '本地估算';
   var style = purityInfo.purity >= 75 ? 'good' : purityInfo.purity >= 50 ? 'info' : 'alert';
 
   var lines = [
     '📍 城市  ' + city + ' · ' + timezone,
     '🏠 类型  ' + cnType(hosting, mobile, isp),
     '✨ 综合纯净度  ' + purityInfo.purity + '/100 · ' + scoreLevel(purityInfo.purity),
+    '🧪 单项  ' + fmtSource('Abuse', abuse) + ' · ' + fmtSource('IPQS', ipqs) + ' · ' + fmtSource('Scam', scam),
     '🚀 速度  ' + speedText,
-    '🧩 来源  ' + sourceUsed,
     '⚖️ 权重  A ' + weights.AbuseIPDB + ' / I ' + weights.IPQS + ' / S ' + weights.Scamalytics
   ];
 
@@ -232,4 +235,3 @@ function aggregatePurity(scores, hosting, proxy, weights) {
     'icon-color': purityInfo.purity >= 75 ? '#34C759' : (purityInfo.purity >= 50 ? '#0A84FF' : '#FF9F0A')
   });
 })();
-
