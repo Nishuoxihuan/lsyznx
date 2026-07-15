@@ -1,15 +1,20 @@
 $httpClient.get("https://api.ip.sb/ip", function(error, response, data) {
-  const status = response ? response.status : "null";
-  const headers = response ? JSON.stringify(response.headers || {}) : "null";
-  const body = data === undefined || data === null ? "null" : String(data);
+  if (error) {
+    $done({
+      title: "节点体检 Pro Max",
+      content: "外网请求失败\n" + JSON.stringify(error),
+      style: "alert"
+    });
+    return;
+  }
+
+  const ip = String(data || "").trim();
 
   $done({
     title: "节点体检 Pro Max",
-    content:
-      "error: " + JSON.stringify(error) + "\n" +
-      "status: " + status + "\n" +
-      "body: " + body + "\n" +
-      "headers: " + headers.slice(0, 300),
-    style: error ? "alert" : "info"
+    content: "外网请求成功\nIP: " + ip,
+    style: "good",
+    icon: "checkmark.circle",
+    "icon-color": "#34C759"
   });
 });
