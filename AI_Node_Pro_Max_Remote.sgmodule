@@ -1,11 +1,12 @@
 #!name=节点体检 Pro Max Debug
-#!desc=聚合 AbuseIPDB / IPQS / Scamalytics 输出综合纯净度，并显示调试状态
+#!desc=固定标题测试版，用于排查参数占位符未展开问题
 #!category=Panel
-#!arguments=ABUSE_KEY=&IPQS_KEY=&SCAM_USER=&SCAM_KEY=&W_ABUSE=40&W_IPQS=35&W_SCAM=25&PANEL_NAME=节点体检 Pro Max Debug
-#!arguments-desc=AbuseIPDB Key&IPQS Key&Scamalytics API User&Scamalytics API Key&AbuseIPDB 权重&IPQS 权重&Scamalytics 权重&面板名称
+#!arguments=ABUSE_KEY=&IPQS_KEY=&SCAM_USER=&SCAM_KEY=
+#!arguments-desc=AbuseIPDB Key&IPQS Key&Scamalytics API User&Scamalytics API Key
 
 [Panel]
-%PANEL_NAME% = title="%PANEL_NAME%",content="点击刷新开始检测",style=info,script-name=%PANEL_NAME%,update-interval=300
+节点体检 Pro Max Debug = title="节点体检 Pro Max Debug",content="点击刷新开始检测",style=info,script-name=节点体检 Pro Max Debug,update-interval=300
 
 [Script]
-%PANEL_NAME% = type=generic,timeout=40,script-path=https://raw.githubusercontent.com/Nishuoxihuan/lsyznx/refs/heads/main/AI_Node_Pro_Max_Local.js,argument="abuse=%ABUSE_KEY%&ipqs=%IPQS_KEY%&scam_user=%SCAM_USER%&scam_key=%SCAM_KEY%&wabuse=%W_ABUSE%&wipqs=%W_IPQS%&wscam=%W_SCAM%&panel=%PANEL_NAME%"
+节点体检 Pro Max Debug = type=generic,timeout=40,script-path=https://raw.githubusercontent.com/Nishuoxihuan/lsyznx/refs/heads/main/AI_Node_Pro_Max_Local.js,argument="abuse=%ABUSE_KEY%&ipqs=%IPQS_KEY%&scam_user=%SCAM_USER%&scam_key=%SCAM_KEY%&wabuse=40&wipqs=35&wscam=25&panel=节点体检 Pro Max Debug"
+
