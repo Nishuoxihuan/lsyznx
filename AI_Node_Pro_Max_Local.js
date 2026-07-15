@@ -1,4 +1,4 @@
-$httpClient.get("https://api.my-ip.io/ip", function(error, response, data) {
+$httpClient.get("https://api.ip.sb/ip", function(error, response, data) {
   if (error) {
     $done({
       title: "节点体检 Pro Max",
@@ -10,7 +10,9 @@ $httpClient.get("https://api.my-ip.io/ip", function(error, response, data) {
 
   $done({
     title: "节点体检 Pro Max",
-    content: "外网请求成功\nIP: " + String(data).trim(),
-    style: "good"
+    content: "外网请求成功\nIP: " + String(data || "").trim(),
+    style: "good",
+    icon: "checkmark.circle",
+    "icon-color": "#34C759"
   });
 });
