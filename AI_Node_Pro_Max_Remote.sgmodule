@@ -8,4 +8,4 @@
 %PANEL_NAME% = title="%PANEL_NAME%",content="点击刷新开始检测",style=info,script-name=%PANEL_NAME%,update-interval=300
 
 [Script]
-%PANEL_NAME% = type=generic,timeout=30,script-path=https://raw.githubusercontent.com/REPLACE_ME/REPLACE_ME/main/AI_Node_Purity_Aggregated_Args.js,argument="abuse={{{ABUSE_KEY}}}&ipqs={{{IPQS_KEY}}}&scam={{{SCAM_KEY}}}&panel={{{PANEL_NAME}}}"
+%PANEL_NAME% = type=generic,timeout=30,script-path=https://raw.githubusercontent.com/Nishuoxihuan/lsyznx/refs/heads/main/AI_Node_Pro_Max_Local.js,argument="abuse={{{ABUSE_KEY}}}&ipqs={{{IPQS_KEY}}}&scam={{{SCAM_KEY}}}&panel={{{PANEL_NAME}}}"
