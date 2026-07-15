@@ -17,6 +17,15 @@ function parseArgument() {
   return out;
 }
 
+function parseConfig(raw) {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
+}
+
 function getText(url) {
   return new Promise(function(resolve) {
     get(url, { 'User-Agent': 'Mozilla/5.0', 'Accept': '*/*' }, function(error, response, data) {
@@ -85,6 +94,11 @@ function scoreLevel(score) {
   return '高风险';
 }
 
+function numOr(defaultValue, val) {
+  var n = parseFloat(val);
+  return isNaN(n) ? defaultValue : n;
+}
+
 async function getGeo(mainIP) {
   var geo = null;
   if (mainIP) {
@@ -128,25 +142,27 @@ async function getScamScore(ip, key) {
   return { name: 'Scamalytics', ok: score !== null, score: score };
 }
 
-function aggregatePurity(scores, hosting, proxy) {
-  var weights = { AbuseIPDB: 0.40, IPQS: 0.35, Scamalytics: 0.25 };
+function aggregatePurity(scores, hosting, proxy, weights) {
   var used = scores.filter(function(x) { return x.ok && typeof x.score === 'number'; });
-
   if (!used.length) {
     var baseRisk = 8;
     if (hosting) baseRisk += 28;
     if (proxy) baseRisk += 20;
     return { purity: clamp(100 - baseRisk, 0, 100), mode: 'fallback' };
   }
-
   var weightSum = 0;
   var risk = 0;
   used.forEach(function(item) {
-    var w = weights[item.name] || 0.2;
+    var w = weights[item.name] || 0;
     risk += item.score * w;
     weightSum += w;
   });
-  risk = weightSum > 0 ? risk / weightSum : risk;
+  if (weightSum <= 0) {
+    used.forEach(function(item) { risk += item.score; });
+    risk = risk / used.length;
+  } else {
+    risk = risk / weightSum;
+  }
   if (hosting) risk += 8;
   if (proxy) risk += 12;
   return { purity: clamp(Math.round(100 - risk), 0, 100), mode: 'api' };
@@ -154,10 +170,17 @@ function aggregatePurity(scores, hosting, proxy) {
 
 (async function() {
   var args = parseArgument();
-  var ABUSE_KEY = args.abuse || '';
-  var IPQS_KEY = args.ipqs || '';
-  var SCAM_KEY = args.scam || '';
-  var PANEL_NAME = args.panel || '节点体检 Pro Max';
+  var cfg = parseConfig(args.config || '');
+
+  var ABUSE_KEY = cfg.abuse || '';
+  var IPQS_KEY = cfg.ipqs || '';
+  var SCAM_KEY = cfg.scam || '';
+  var PANEL_NAME = cfg.panel || '节点体检 Pro Max';
+  var weights = {
+    AbuseIPDB: numOr(40, cfg.wabuse),
+    IPQS: numOr(35, cfg.wipqs),
+    Scamalytics: numOr(25, cfg.wscam)
+  };
 
   var mainIP = await getText('https://api.ip.sb/ip');
   var geoPack = await getGeo(mainIP);
@@ -171,7 +194,7 @@ function aggregatePurity(scores, hosting, proxy) {
   var proxy = !!(geo && geo.proxy);
   var mobile = !!(geo && geo.mobile);
 
-  var [chatgpt, claude, gemini, abuse, ipqs, scam] = await Promise.all([
+  var results = await Promise.all([
     siteCheck('ChatGPT', 'https://chatgpt.com/', 'chatgpt'),
     siteCheck('Claude', 'https://claude.ai/', 'claude'),
     siteCheck('Gemini', 'https://gemini.google.com/', 'gemini'),
@@ -180,19 +203,25 @@ function aggregatePurity(scores, hosting, proxy) {
     getScamScore(mainIP, SCAM_KEY)
   ]);
 
-  var purityInfo = aggregatePurity([abuse, ipqs, scam], hosting, proxy);
+  var chatgpt = results[0];
+  var claude = results[1];
+  var gemini = results[2];
+  var abuse = results[3];
+  var ipqs = results[4];
+  var scam = results[5];
+
+  var purityInfo = aggregatePurity([abuse, ipqs, scam], hosting, proxy, weights);
   var speedText = 'ChatGPT ' + chatgpt.ms + 'ms · Claude ' + claude.ms + 'ms · Gemini ' + gemini.ms + 'ms';
   var sourceUsed = [abuse, ipqs, scam].filter(function(x) { return x.ok; }).map(function(x) { return x.name; }).join(' / ') || '本地估算';
-  var okCount = [chatgpt.ok, claude.ok, gemini.ok].filter(Boolean).length;
   var style = purityInfo.purity >= 75 ? 'good' : purityInfo.purity >= 50 ? 'info' : 'alert';
-  if (okCount === 0) style = 'alert';
 
   var lines = [
     '📍 城市  ' + city + ' · ' + timezone,
     '🏠 类型  ' + cnType(hosting, mobile, isp),
     '✨ 综合纯净度  ' + purityInfo.purity + '/100 · ' + scoreLevel(purityInfo.purity),
     '🚀 速度  ' + speedText,
-    '🧩 来源  ' + sourceUsed
+    '🧩 来源  ' + sourceUsed,
+    '⚖️ 权重  A ' + weights.AbuseIPDB + ' / I ' + weights.IPQS + ' / S ' + weights.Scamalytics
   ];
 
   $done({
