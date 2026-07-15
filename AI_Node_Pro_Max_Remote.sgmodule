@@ -1,10 +1,11 @@
 #!name=节点体检 Pro Max
-#!desc=AI 服务、IPv4/IPv6、DNS、风险、纯净度检测
-#!system=ios
+#!desc=聚合 AbuseIPDB / IPQS / Scamalytics 输出综合纯净度
 #!category=Panel
+#!arguments=ABUSE_KEY:,IPQS_KEY:,SCAM_KEY:,PANEL_NAME:节点体检 Pro Max
+#!arguments-desc=ABUSE_KEY: 填入 AbuseIPDB API Key\nIPQS_KEY: 填入 IPQualityScore API Key\nSCAM_KEY: 填入 Scamalytics API Key\nPANEL_NAME: 面板名称
 
 [Panel]
-AI_Node_Pro_Max = title="节点体检 Pro Max",content="点击刷新开始检测",style=info,script-name=AI_Node_Pro_Max,update-interval=300
+%PANEL_NAME% = title="%PANEL_NAME%",content="点击刷新开始检测",style=info,script-name=%PANEL_NAME%,update-interval=300
 
 [Script]
-AI_Node_Pro_Max = type=generic,timeout=40,script-path=https://raw.githubusercontent.com/Nishuoxihuan/lsyznx/main/AI_Node_Pro_Max_Local.js
+%PANEL_NAME% = type=generic,timeout=30,script-path=https://raw.githubusercontent.com/REPLACE_ME/REPLACE_ME/main/AI_Node_Purity_Aggregated_Args.js,argument="abuse={{{ABUSE_KEY}}}&ipqs={{{IPQS_KEY}}}&scam={{{SCAM_KEY}}}&panel={{{PANEL_NAME}}}"
