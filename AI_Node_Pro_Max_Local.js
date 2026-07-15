@@ -20,7 +20,6 @@ function testSpeed(url, callback) {
   request(url, function (error, response, data, ms) {
     var status = response ? response.status : 0;
 
-    // 能收到网站响应即视为连通，403 常为地区或登录限制页面
     var ok = !error && (
       status === 200 ||
       status === 301 ||
@@ -35,6 +34,19 @@ function testSpeed(url, callback) {
       ms: ms
     });
   });
+}
+
+function countryFlag(code) {
+  if (!code || String(code).length !== 2) {
+    return "🏳️";
+  }
+
+  code = String(code).toUpperCase();
+
+  return String.fromCodePoint(
+    code.charCodeAt(0) + 127397,
+    code.charCodeAt(1) + 127397
+  );
 }
 
 function two(n) {
@@ -70,7 +82,8 @@ function finish(geo, chatgpt, claude, gemini) {
   $done({
     title: "节点体检 Pro Max",
     content:
-      "📍 城市  " + geo.city + " · " + geo.timezone + "\n" +
+      "📍 城市  " + countryFlag(geo.countryCode) + " " +
+      geo.city + " · " + geo.timezone + "\n" +
       "🕒 时间  " + getLocalTime(geo.offset) + "\n" +
       "🌐 落地 IP  " + geo.ip + "\n" +
       "🏠 类型  " + getType(geo) + "\n" +
@@ -82,13 +95,14 @@ function finish(geo, chatgpt, claude, gemini) {
 }
 
 request(
-  "http://ip-api.com/json/?lang=zh-CN&fields=status,query,city,timezone,offset,hosting,mobile",
+  "http://ip-api.com/json/?lang=zh-CN&fields=status,query,countryCode,city,timezone,offset,hosting,mobile",
   function (error, response, data) {
     var geo = {
       city: "未知",
       timezone: "未知",
       offset: null,
       ip: "未知",
+      countryCode: "",
       hosting: false,
       mobile: false
     };
@@ -102,6 +116,7 @@ request(
           geo.timezone = result.timezone || "未知";
           geo.offset = result.offset;
           geo.ip = result.query || "未知";
+          geo.countryCode = result.countryCode || "";
           geo.hosting = result.hosting === true;
           geo.mobile = result.mobile === true;
         }
