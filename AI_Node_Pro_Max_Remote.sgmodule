@@ -1,5 +1,5 @@
-[Panel]
-节点体检 Pro Max Debug = title="节点体检 Pro Max Debug",content="点击刷新开始检测",style=info,script-name=节点体检 Pro Max Debug,update-interval=300
-
-[Script]
-节点体检 Pro Max Debug = type=generic,timeout=40,script-path=https://raw.githubusercontent.com/Nishuoxihuan/lsyznx/refs/heads/main/AI_Node_Pro_Max_Local.js
+from pathlib import Path
+js=Path('output/AI_Node_Pro_Max_Local.js').read_text(encoding='utf-8')
+assert 'countryFlag' in js and 'countryCode' in js and '落地 IP' in js and 'Asia' not in js
+assert 'script-path=https://raw.githubusercontent.com/Nishuoxihuan/lsyznx/refs/heads/main/AI_Node_Pro_Max_Local.js' in Path('output/AI_Node_Pro_Max_Remote.sgmodule').read_text(encoding='utf-8')
+print('validated', js.count('\n')+1)
