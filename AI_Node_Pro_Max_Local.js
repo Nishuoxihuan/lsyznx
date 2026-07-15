@@ -4,6 +4,19 @@ function get(url, headers, cb) {
   });
 }
 
+function parseArgument() {
+  var raw = typeof $argument !== 'undefined' ? $argument : '';
+  var out = {};
+  raw.split('&').forEach(function(pair) {
+    var idx = pair.indexOf('=');
+    if (idx === -1) return;
+    var k = pair.slice(0, idx);
+    var v = pair.slice(idx + 1);
+    out[k] = decodeURIComponent(v || '');
+  });
+  return out;
+}
+
 function getText(url) {
   return new Promise(function(resolve) {
     get(url, { 'User-Agent': 'Mozilla/5.0', 'Accept': '*/*' }, function(error, response, data) {
@@ -140,9 +153,11 @@ function aggregatePurity(scores, hosting, proxy) {
 }
 
 (async function() {
-   var ABUSE_KEY ='7374eaf47622ebac3d5ecc82855f34f0a454b27387c8f5f1e455cb1447e614dad4abe7607f11bffb';
-   var IPQS_KEY = 'Lkhgd74dUUInYpgcqj2lw95fgBFxTt9D';
-   var SCAM_KEY = 'bd560d5fcb2cc148a3b9f704a6a99bbe10a939864e20466dccf07015f947ee57';
+  var args = parseArgument();
+  var ABUSE_KEY = args.abuse || '';
+  var IPQS_KEY = args.ipqs || '';
+  var SCAM_KEY = args.scam || '';
+  var PANEL_NAME = args.panel || '节点体检 Pro Max';
 
   var mainIP = await getText('https://api.ip.sb/ip');
   var geoPack = await getGeo(mainIP);
@@ -181,10 +196,11 @@ function aggregatePurity(scores, hosting, proxy) {
   ];
 
   $done({
-    title: '节点体检 Pro Max',
+    title: PANEL_NAME,
     content: lines.join('\n'),
     style: style,
     icon: 'checkmark.shield',
     'icon-color': purityInfo.purity >= 75 ? '#34C759' : (purityInfo.purity >= 50 ? '#0A84FF' : '#FF9F0A')
   });
 })();
+
